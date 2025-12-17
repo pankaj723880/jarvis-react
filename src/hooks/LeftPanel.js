@@ -1,11 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-const LeftPanel = ({ onConfigClick, onTrackClick, onScanClick, onCamToggle, onMatrixToggle, onVoiceToggle, onSecurityToggle, onVisualizerToggle, onKeyboardToggle, onScanModeToggle, onNightModeToggle, onMapToggle, onWeatherToggle, onClockToggle, onDashboardToggle, onFocusModeToggle, onSaveLog, onDiagnostics, onReboot, isVisualizerEnabled, isKeyboardOpen, isScanMode, isNightMode, isMapMode, isWeatherMode, isClockMode, isDashboardOpen, isFocusMode, status, gesture, fps, isTracking, isCamVisible, isMatrixEnabled, isVoiceEnabled, isSecurityMode }) => {
+const LeftPanel = ({ onConfigClick, onTrackClick, onScanClick, onCamToggle, onMatrixToggle, onVoiceToggle, onSecurityToggle, onVisualizerToggle, onKeyboardToggle, onScanModeToggle, onNightModeToggle, onMapToggle, onGlobeToggle, onWeatherToggle, onClockToggle, onDashboardToggle, onFocusModeToggle, onSaveLog, onDiagnostics, onReboot, isVisualizerEnabled, isKeyboardOpen, isScanMode, isNightMode, isMapMode, isGlobeMode, isWeatherMode, isClockMode, isDashboardOpen, isFocusMode, status, gesture, fps, isTracking, isCamVisible, isMatrixEnabled, isVoiceEnabled, isSecurityMode }) => {
     const [isOpen, setIsOpen] = useState(false);
 
     const handleAction = (callback) => {
         if (callback) callback();
-        setIsOpen(false);
     };
 
     // Swipe Gesture
@@ -57,6 +56,7 @@ const LeftPanel = ({ onConfigClick, onTrackClick, onScanClick, onCamToggle, onMa
             <button id="btn-ar-scan" onClick={() => handleAction(onScanModeToggle)} className={isScanMode ? 'active' : ''}>{isScanMode ? 'AR SCANNER: ON' : 'AR SCANNER: OFF'}</button>
             <button id="btn-night-mode" onClick={() => handleAction(onNightModeToggle)} className={isNightMode ? 'active' : ''}>{isNightMode ? 'NIGHT MODE: ON' : 'NIGHT MODE: OFF'}</button>
             <button id="btn-map" onClick={() => handleAction(onMapToggle)} className={isMapMode ? 'active' : ''}>{isMapMode ? 'HOLO-MAP: ON' : 'HOLO-MAP: OFF'}</button>
+            <button id="btn-globe" onClick={() => handleAction(onGlobeToggle)} className={isGlobeMode ? 'active' : ''}>{isGlobeMode ? 'HOLO-GLOBE: ON' : 'HOLO-GLOBE: OFF'}</button>
             <button id="btn-weather" onClick={() => handleAction(onWeatherToggle)} className={isWeatherMode ? 'active' : ''}>{isWeatherMode ? 'WEATHER: ON' : 'WEATHER: OFF'}</button>
             <button id="btn-clock" onClick={() => handleAction(onClockToggle)} className={isClockMode ? 'active' : ''}>{isClockMode ? 'HOLO-CLOCK: ON' : 'HOLO-CLOCK: OFF'}</button>
             <button id="btn-dashboard" onClick={() => handleAction(onDashboardToggle)} className={isDashboardOpen ? 'active' : ''}>{isDashboardOpen ? 'SYS STATUS: ON' : 'SYS STATUS: OFF'}</button>

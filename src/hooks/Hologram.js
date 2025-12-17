@@ -65,6 +65,16 @@ const Hologram = ({ state, mode, weatherData }) => {
                         <div className="globe-ring g-ring-1"></div>
                         <div className="globe-ring g-ring-2"></div>
                     </div>
+                ) : mode === 'GLOBE' ? (
+                    <div className="holo-network-globe">
+                        <div className="globe-wireframe"></div>
+                        <div className="net-beam b1"></div>
+                        <div className="net-beam b2"></div>
+                        <div className="net-beam b3"></div>
+                        <div className="net-node n1"></div>
+                        <div className="net-node n2"></div>
+                        <div className="net-node n3"></div>
+                    </div>
                 ) : mode === 'CLOCK' ? (
                     <div className="holo-clock">
                         <div className="clock-time">{time.toLocaleTimeString()}</div>
@@ -73,14 +83,26 @@ const Hologram = ({ state, mode, weatherData }) => {
                     </div>
                 ) : mode === 'WEATHER' && weatherData ? (
                     <div className="holo-weather">
-                        <div className="weather-temp">{weatherData.temperature}°C</div>
                         {weatherData.weathercode === 0 ? (
                             <div className="weather-sun"></div>
-                        ) : weatherData.weathercode <= 3 ? (
+                        ) : (weatherData.weathercode <= 3 || weatherData.weathercode === 45 || weatherData.weathercode === 48) ? (
                             <div className="weather-cloud">
                                 <div className="cloud-part c1"></div>
                                 <div className="cloud-part c2"></div>
                                 <div className="cloud-part c3"></div>
+                            </div>
+                        ) : (weatherData.weathercode >= 71 && weatherData.weathercode <= 77) || (weatherData.weathercode >= 85 && weatherData.weathercode <= 86) ? (
+                            <div className="weather-snow">
+                                <div className="cloud-part c1"></div>
+                                <div className="snow-flake s1"></div>
+                                <div className="snow-flake s2"></div>
+                                <div className="snow-flake s3"></div>
+                            </div>
+                        ) : weatherData.weathercode >= 95 ? (
+                            <div className="weather-storm">
+                                <div className="cloud-part c1"></div>
+                                <div className="cloud-part c2"></div>
+                                <div className="lightning l1"></div>
                             </div>
                         ) : (
                             <div className="weather-rain">
@@ -90,6 +112,13 @@ const Hologram = ({ state, mode, weatherData }) => {
                                 <div className="rain-drop d3"></div>
                             </div>
                         )}
+                        
+                        <div className="weather-details">
+                            <div className="weather-row"><span>TEMP</span><span>{weatherData.temperature}°C</span></div>
+                            <div className="weather-row"><span>WIND</span><span>{weatherData.windspeed} km/h</span></div>
+                            <div className="weather-row"><span>DIR</span><span>{weatherData.winddirection}°</span></div>
+                            <div className="weather-row"><span>CODE</span><span>{weatherData.weathercode}</span></div>
+                        </div>
                     </div>
                 ) : (
                     <div className="core-cube">

@@ -1,8 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const ConfigModal = ({ isOpen, onClose, onSave, initialKey, initialModel }) => {
     const [key, setKey] = useState(initialKey || '');
     const [model, setModel] = useState(initialModel || 'google/gemini-2.0-flash-001');
+    
+    // Dragging Logic
+    const [pos, setPos] = useState({ x: window.innerWidth / 2 - 160, y: window.innerHeight / 2 - 150 });
+    const isDragging = useRef(false);
+    const offset = useRef({ x: 0, y: 0 });
+
+    const handleMouseDown = (e) => {
+        isDragging.current = true;
+        offset.current = { x: e.clientX - pos.x, y: e.clientY - pos.y };
+    };
+
+    useEffect(() => {
+        const handleMouseMove = (e) => {
+            if (!isDragging.current) return;
+            setPos({ x: e.clientX - offset.current.x, y: e.clientY - offset.current.y });
+        };
+        const handleMouseUp = () => { isDragging.current = false; };
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, []);
 
     useEffect(() => {
         setKey(initialKey || '');
@@ -21,8 +45,8 @@ const ConfigModal = ({ isOpen, onClose, onSave, initialKey, initialModel }) => {
     return (
         <>
             <div id="config-overlay" style={{ display: 'block' }}></div>
-            <div id="config-modal" style={{ display: 'block' }}>
-                <div className="hud-header">SYSTEM CONFIGURATION</div>
+            <div id="config-modal" style={{ display: 'block', top: pos.y, left: pos.x, transform: 'none' }}>
+                <div className="hud-header" onMouseDown={handleMouseDown} style={{ cursor: 'grab' }}>SYSTEM CONFIGURATION</div>
                 
                 <div style={{ fontSize: '11px', marginBottom: '5px', color: '#aaa' }}>NEURAL MODEL SELECTION</div>
                 <select 

@@ -9,6 +9,8 @@ import InputArea from './hooks/InputArea';
 import ConfigModal from './hooks/ConfigModal';
 import HoloKeyboard from './hooks/HoloKeyboard';
 import SystemDashboard from './hooks/SystemDashboard';
+import CommandPalette from './hooks/CommandPalette';
+import NewsTicker from './hooks/NewsTicker';
 
 function App() {
   const particleCanvasRef = useRef(null);
@@ -18,7 +20,7 @@ function App() {
   const [messages, setMessages] = useState([
     { sender: 'AI', text: 'J.A.R.V.I.S. Core V5.0 Online. Voice & File Systems Active.' }
   ]);
-  const [apiKey, setApiKey] = useState('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');
+  const [apiKey, setApiKey] = useState('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');
   const [currentModel, setCurrentModel] = useState(localStorage.getItem('jarvis_model') || 'google/gemini-2.0-flash-001');
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [inputText, setInputText] = useState('');
@@ -32,6 +34,7 @@ function App() {
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [weatherData, setWeatherData] = useState(null);
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   
   // UI States
   const [isTracking, setIsTracking] = useState(false);
@@ -105,6 +108,18 @@ function App() {
         cancelAnimationFrame(animationId);
     };
   }, [isMatrixEnabled]);
+
+  // --- Command Palette Shortcut (Ctrl+K) ---
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            setIsPaletteOpen(prev => !prev);
+        }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // --- Focus Mode Shortcut ---
   useEffect(() => {
@@ -304,6 +319,18 @@ function App() {
         setMode('MAP');
         setTheme({ h: 210, s: 100, l: 60 });
         speakResponse("Holo Map initialized.");
+    }
+  };
+
+  const handleGlobeToggle = () => {
+    if (mode === 'GLOBE') {
+        setMode('IDLE');
+        setTheme({ h: 180, s: 100, l: 50 });
+        speakResponse("Holo Globe deactivated.");
+    } else {
+        setMode('GLOBE');
+        setTheme({ h: 260, s: 100, l: 60 });
+        speakResponse("Holo Globe initialized. Visualizing network traffic.");
     }
   };
 
@@ -650,6 +677,28 @@ function App() {
     }
   };
 
+  const commands = [
+      { id: 'toggle-track', label: isTracking ? 'Terminate Tracking' : 'Init Hand Tracking', action: handleTrackInit },
+      { id: 'toggle-cam', label: isCamVisible ? 'Hide Camera' : 'Show Camera', action: () => setIsCamVisible(!isCamVisible) },
+      { id: 'toggle-matrix', label: isMatrixEnabled ? 'Disable Matrix' : 'Enable Matrix', action: () => setIsMatrixEnabled(!isMatrixEnabled) },
+      { id: 'toggle-voice', label: isVoiceEnabled ? 'Disable TTS' : 'Enable TTS', action: () => setIsVoiceEnabled(!isVoiceEnabled) },
+      { id: 'toggle-security', label: isSecurityMode ? 'Disarm Security' : 'Arm Security', action: handleSecurityToggle },
+      { id: 'toggle-vis', label: isVisualizerEnabled ? 'Disable Visualizer' : 'Enable Visualizer', action: handleVisualizerToggle },
+      { id: 'toggle-keyboard', label: isKeyboardOpen ? 'Hide Keyboard' : 'Show Keyboard', action: () => setIsKeyboardOpen(!isKeyboardOpen) },
+      { id: 'toggle-scan', label: isScanMode ? 'Disable AR Scan' : 'Enable AR Scan', action: () => setIsScanMode(!isScanMode) },
+      { id: 'toggle-night', label: isNightMode ? 'Disable Night Mode' : 'Enable Night Mode', action: handleNightModeToggle },
+      { id: 'toggle-map', label: mode === 'MAP' ? 'Close Holo-Map' : 'Open Holo-Map', action: handleMapToggle },
+      { id: 'toggle-globe', label: mode === 'GLOBE' ? 'Close Holo-Globe' : 'Open Holo-Globe', action: handleGlobeToggle },
+      { id: 'toggle-weather', label: mode === 'WEATHER' ? 'Close Weather' : 'Open Weather', action: handleWeatherToggle },
+      { id: 'toggle-clock', label: mode === 'CLOCK' ? 'Close Clock' : 'Open Clock', action: handleClockToggle },
+      { id: 'toggle-dash', label: isDashboardOpen ? 'Close Dashboard' : 'Open Dashboard', action: () => setIsDashboardOpen(!isDashboardOpen) },
+      { id: 'toggle-focus', label: isFocusMode ? 'Exit Focus Mode' : 'Enter Focus Mode', action: handleFocusModeToggle },
+      { id: 'sys-reboot', label: 'System Reboot', action: handleReboot },
+      { id: 'sys-diag', label: 'Run Diagnostics', action: handleDiagnostics },
+      { id: 'save-log', label: 'Save Chat Log', action: handleSaveChat },
+      { id: 'vision-scan', label: 'Perform Vision Scan', action: handleVisionScan },
+  ];
+
   return (
     <div className={`App ${isFocusMode ? 'focus-mode' : ''}`}>
       <video id="video" ref={videoRef} className={`${isCamVisible ? 'visible' : ''} ${isNightMode ? 'night-mode' : ''}`}></video>
@@ -677,6 +726,7 @@ function App() {
         onScanModeToggle={() => setIsScanMode(!isScanMode)}
         onNightModeToggle={handleNightModeToggle}
         onMapToggle={handleMapToggle}
+        onGlobeToggle={handleGlobeToggle}
         onWeatherToggle={handleWeatherToggle}
         onClockToggle={handleClockToggle}
         onDashboardToggle={() => setIsDashboardOpen(!isDashboardOpen)}
@@ -695,6 +745,7 @@ function App() {
         isSecurityMode={isSecurityMode}
         isNightMode={isNightMode}
         isMapMode={mode === 'MAP'}
+        isGlobeMode={mode === 'GLOBE'}
         isWeatherMode={mode === 'WEATHER'}
         isClockMode={mode === 'CLOCK'}
         isDashboardOpen={isDashboardOpen}
@@ -720,6 +771,14 @@ function App() {
             isInteracting={gesture === 'POINT'} 
         />
       )}
+
+      <NewsTicker />
+
+      <CommandPalette 
+        isOpen={isPaletteOpen} 
+        onClose={() => setIsPaletteOpen(false)} 
+        commands={commands} 
+      />
 
       <ConfigModal 
         isOpen={isConfigOpen} 
