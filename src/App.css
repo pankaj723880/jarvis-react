@@ -1,0 +1,526 @@
+/* --- 1. CORE VARIABLES & THEME --- */
+:root {
+  /* Hologram Physics State (Driven by JS) */
+  --tx: 0px;
+  --ty: 0px;
+  --tz: 0px;
+  --rx: 0deg;
+  --ry: 0deg;
+  --rz: 0deg;
+  --scale: 1;
+  --breath: 1;
+  --explode: 0; 
+
+  /* Dynamic Color Theme */
+  --base-h: 180;  /* Cyan Base */
+  --base-s: 100%;
+  --base-l: 50%;
+  --holo-color: hsla(var(--base-h), var(--base-s), var(--base-l), 0.8);
+  
+  --bg-dark: #050505;
+  --panel-bg: rgba(10, 15, 15, 0.85);
+}
+
+body {
+  font-family: 'Segoe UI', 'Courier New', monospace;
+  background-color: var(--bg-dark);
+  color: var(--holo-color);
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  
+  /* Sci-Fi Grid Background */
+  background-image: 
+      linear-gradient(rgba(0, 255, 204, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 255, 204, 0.03) 1px, transparent 1px),
+      radial-gradient(circle at 50% 50%, rgba(0, 20, 20, 1) 0%, rgba(5, 5, 5, 1) 80%);
+  background-size: 40px 40px, 40px 40px, 100% 100%;
+}
+
+/* --- 2. HOLOGRAM STAGE (Optimized GPU Layer) --- */
+#stage-container {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  perspective: 1200px;
+}
+
+.holo-wrapper {
+  position: relative;
+  width: 500px; height: 500px;
+  transform-style: preserve-3d;
+  transform: 
+      translate3d(var(--tx), var(--ty), 0)
+      translateZ(var(--tz))
+      rotateX(var(--rx))
+      rotateY(var(--ry))
+      rotateZ(var(--rz))
+      scale(var(--scale));
+  /* Physics driven by inline styles in React component */
+  will-change: transform;
+  transition: filter 0.2s ease;
+}
+
+/* --- ADVANCED GEOMETRY --- */
+.gyro-assembly {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 0; height: 0;
+  transform-style: preserve-3d;
+}
+
+.gyro-ring {
+  position: absolute;
+  top: 50%; left: 50%;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 255, 204, 0.3);
+  box-shadow: 0 0 15px var(--holo-color);
+  transform-style: preserve-3d;
+}
+
+.ring-x {
+  width: 400px; height: 400px;
+  border-top: 4px solid var(--holo-color);
+  border-bottom: 4px solid var(--holo-color);
+  transform: translate(-50%, -50%) rotateX(calc(var(--rx) * -1.5));
+  animation: spin-gyro 10s linear infinite;
+}
+
+.ring-y {
+  width: 340px; height: 340px;
+  border-left: 4px solid var(--holo-color);
+  border-right: 4px solid var(--holo-color);
+  transform: translate(-50%, -50%) rotateY(calc(var(--ry) * -1.5));
+  animation: spin-gyro-rev 8s linear infinite;
+}
+
+.ring-z {
+  width: 280px; height: 280px;
+  border: 2px dashed var(--holo-color);
+  transform: translate(-50%, -50%) rotateZ(var(--rz));
+  animation: spin-gyro 15s linear infinite;
+}
+
+.holo-grid {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 800px; height: 800px;
+  background: 
+    linear-gradient(rgba(0, 255, 204, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 204, 0.1) 1px, transparent 1px);
+  background-size: 40px 40px;
+  transform: translate(-50%, -50%) rotateX(90deg) translateZ(-200px);
+  mask-image: radial-gradient(circle, black 30%, transparent 70%);
+  opacity: 0.5;
+}
+
+.scan-line {
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 2px;
+  background: var(--holo-color);
+  box-shadow: 0 0 20px var(--holo-color);
+  animation: scan 3s ease-in-out infinite;
+  opacity: 0.7;
+  transform: translateZ(calc(var(--explode) * 0.5px));
+}
+
+.core-cube {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 80px; height: 80px;
+  transform-style: preserve-3d;
+  transform: translate(-50%, -50%) scale(var(--breath)) rotateX(45deg) rotateY(45deg);
+  will-change: transform;
+}
+
+.face {
+  position: absolute;
+  width: 80px; height: 80px;
+  border: 2px solid var(--holo-color);
+  background: rgba(0, 255, 204, 0.1);
+  box-shadow: inset 0 0 20px rgba(0, 255, 204, 0.2);
+  backface-visibility: visible; 
+}
+
+/* Gestural States Visuals */
+.gesture-grabbed .gyro-ring { border-color: #ffaa00; box-shadow: 0 0 30px #ffaa00; }
+.gesture-grabbed .face { border-color: #ffaa00; background: rgba(255, 170, 0, 0.3); }
+.gesture-pinch .gyro-ring { border-style: dotted; border-width: 2px; }
+.gesture-pinch .holo-wrapper { filter: hue-rotate(90deg); }
+.gesture-point .holo-wrapper { filter: hue-rotate(-60deg) brightness(1.5); }
+
+.f-front  { transform: translateZ(40px); }
+.f-back   { transform: rotateY(180deg) translateZ(40px); }
+.f-right  { transform: rotateY(90deg) translateZ(40px); }
+.f-left   { transform: rotateY(-90deg) translateZ(40px); }
+.f-top    { transform: rotateX(90deg) translateZ(40px); }
+.f-bottom { transform: rotateX(-90deg) translateZ(40px); }
+
+/* --- HOLO MAP (GLOBE) --- */
+.holo-globe {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 140px; height: 140px;
+  transform-style: preserve-3d;
+  transform: translate(-50%, -50%);
+  animation: spin-globe 20s linear infinite;
+}
+
+.globe-sphere {
+  position: absolute;
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  border: 1px solid var(--holo-color);
+  background: 
+    repeating-linear-gradient(0deg, transparent 0, transparent 10%, rgba(0, 255, 204, 0.1) 10%, rgba(0, 255, 204, 0.1) 11%),
+    repeating-linear-gradient(90deg, transparent 0, transparent 10%, rgba(0, 255, 204, 0.1) 10%, rgba(0, 255, 204, 0.1) 11%);
+  box-shadow: inset 0 0 20px rgba(0, 255, 204, 0.2);
+}
+
+.globe-ring {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 255, 204, 0.3);
+}
+
+.g-ring-1 { transform: rotateY(60deg); }
+.g-ring-2 { transform: rotateY(120deg); }
+
+@keyframes spin-globe {
+  from { transform: translate(-50%, -50%) rotateY(0deg); }
+  to { transform: translate(-50%, -50%) rotateY(360deg); }
+}
+
+/* --- HOLO CLOCK --- */
+.holo-clock {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  transform-style: preserve-3d;
+  animation: float-clock 4s ease-in-out infinite;
+}
+
+.clock-time {
+  font-size: 60px;
+  font-weight: bold;
+  color: var(--holo-color);
+  text-shadow: 0 0 20px var(--holo-color);
+  letter-spacing: 4px;
+}
+
+.clock-date {
+  font-size: 20px;
+  color: var(--holo-color);
+  opacity: 0.8;
+  margin-top: 10px;
+}
+
+.clock-ring {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 300px; height: 300px;
+  border: 2px dashed var(--holo-color);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: spin 20s linear infinite;
+}
+
+@keyframes float-clock {
+  0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+  50% { transform: translate(-50%, -50%) translateY(-20px); }
+}
+
+/* --- HOLO WEATHER --- */
+.holo-weather {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  transform-style: preserve-3d;
+  text-align: center;
+}
+
+.weather-temp {
+  font-size: 40px;
+  color: var(--holo-color);
+  text-shadow: 0 0 10px var(--holo-color);
+  transform: translateY(-80px);
+}
+
+.weather-sun {
+  width: 150px; height: 150px;
+  background: radial-gradient(circle, var(--holo-color) 20%, transparent 70%);
+  border-radius: 50%;
+  box-shadow: 0 0 50px var(--holo-color);
+  animation: pulse-sun 3s infinite;
+}
+
+.weather-cloud {
+  width: 200px; height: 100px;
+  position: relative;
+  transform-style: preserve-3d;
+  animation: float-cloud 4s ease-in-out infinite;
+}
+
+.cloud-part {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid var(--holo-color);
+  border-radius: 50%;
+  box-shadow: inset 0 0 20px var(--holo-color);
+}
+
+.c1 { width: 100px; height: 100px; left: 0; top: 0; transform: translateZ(20px); }
+.c2 { width: 120px; height: 120px; left: 60px; top: -20px; transform: translateZ(-20px); }
+.c3 { width: 90px; height: 90px; left: 110px; top: 10px; transform: translateZ(0px); }
+
+.weather-rain {
+  width: 200px; height: 200px;
+  position: relative;
+  transform-style: preserve-3d;
+}
+
+.rain-drop {
+  position: absolute;
+  width: 2px; height: 20px;
+  background: var(--holo-color);
+  top: 50px;
+  animation: rain-fall 1s linear infinite;
+}
+.d1 { left: 50px; animation-delay: 0s; }
+.d2 { left: 100px; animation-delay: 0.3s; }
+.d3 { left: 150px; animation-delay: 0.6s; }
+
+@keyframes pulse-sun { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
+@keyframes float-cloud { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes rain-fall { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(100px); opacity: 0; } }
+
+/* --- UI LAYOUT --- */
+#btn-hamburger {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 100;
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+  padding: 0;
+  border-radius: 4px;
+}
+
+#left-panel {
+  position: fixed; 
+  top: 0; 
+  left: -320px; /* Hidden by default */
+  width: 280px; 
+  height: 100vh;
+  z-index: 90;
+  display: flex; 
+  flex-direction: column; 
+  gap: 10px;
+  background: rgba(5, 10, 10, 0.95);
+  border-right: 1px solid var(--holo-color);
+  padding: 80px 20px 20px 20px; /* Top padding to clear hamburger button */
+  transition: left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  backdrop-filter: blur(10px);
+  touch-action: pan-y;
+  box-shadow: 5px 0 30px rgba(0,0,0,0.5);
+  box-sizing: border-box;
+}
+
+#left-panel.sidebar-open {
+  left: 0;
+}
+
+/* Focus Mode: Hide Hamburger Button */
+.focus-mode #btn-hamburger,
+.focus-mode #system-dashboard,
+.focus-mode #audio-canvas,
+.focus-mode #video,
+.focus-mode #track-canvas {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+
+/* Sidebar Content Animation */
+#left-panel > * {
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+#left-panel.sidebar-open > * {
+  opacity: 1;
+  transform: translateX(0);
+  transition-delay: 0.1s;
+}
+
+#sidebar-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  z-index: 80;
+  backdrop-filter: blur(2px);
+}
+
+#chat-panel {
+  position: fixed; top: 20px; right: 20px; bottom: 100px; width: 350px; z-index: 10;
+  display: flex; flex-direction: column;
+}
+
+#chat-history {
+  flex: 1; overflow-y: auto; padding: 10px;
+  scrollbar-width: thin; scrollbar-color: var(--holo-color) transparent;
+  mask-image: linear-gradient(to bottom, transparent, black 10%);
+}
+
+.message {
+  background: rgba(0, 20, 20, 0.6); border-left: 2px solid var(--holo-color);
+  padding: 10px; margin-bottom: 10px; font-size: 13px; line-height: 1.4;
+  animation: fadeIn 0.3s ease; backdrop-filter: blur(4px);
+}
+.user-msg { border-color: #fff; text-align: right; background: rgba(50, 50, 50, 0.4); }
+.ai-msg { border-color: var(--holo-color); }
+.sys-msg { border-color: #ffaa00; color: #ffaa00; font-style: italic; font-size: 11px; }
+
+#input-area {
+  position: fixed; bottom: 20px; right: 20px; width: 350px; z-index: 20;
+  display: flex; gap: 5px; align-items: center;
+}
+
+input[type="text"] {
+  flex: 1; background: rgba(0, 0, 0, 0.8); border: 1px solid var(--holo-color);
+  color: #fff; padding: 10px; border-radius: 4px; outline: none; letter-spacing: 1px;
+}
+
+button {
+  background: rgba(0, 20, 20, 0.9); border: 1px solid var(--holo-color);
+  color: var(--holo-color); padding: 8px 12px; text-transform: uppercase;
+  font-size: 11px; cursor: pointer; letter-spacing: 1px; transition: all 0.2s;
+  clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+  display: flex; align-items: center; justify-content: center;
+}
+button:hover { background: var(--holo-color); color: #000; }
+button.active { background: var(--holo-color); color: #000; box-shadow: 0 0 15px var(--holo-color); }
+
+.icon-btn { padding: 10px; min-width: 40px; }
+.mic-active { animation: pulse-red 1.5s infinite; border-color: #ff3333 !important; color: #ff3333 !important; }
+
+select.hud-select {
+  width: 100%; background: rgba(0, 15, 15, 0.9); color: var(--holo-color);
+  border: 1px solid var(--holo-color); padding: 8px; font-family: inherit;
+  font-size: 11px; text-transform: uppercase; outline: none; margin-top: 5px; cursor: pointer;
+}
+select.hud-select option { background: #000; color: var(--holo-color); padding: 5px; }
+
+#matrix-canvas {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  opacity: 0.1; z-index: -1; pointer-events: none;
+}
+
+#video { 
+  display: none; position: fixed; bottom: 20px; left: 20px; width: 200px;
+  border: 1px solid var(--holo-color); z-index: 5; opacity: 0.7;
+  transform: scaleX(-1); pointer-events: none;
+}
+#video.visible { display: block; }
+#video.night-mode {
+  filter: brightness(1.5) contrast(1.2) grayscale(0.2) hue-rotate(180deg);
+}
+
+#track-canvas {
+  display: none; 
+  position: fixed; bottom: 20px; left: 20px; width: 200px;
+  z-index: 6; 
+  pointer-events: none;
+  transform: scaleX(-1);
+}
+#track-canvas.visible { display: block; }
+
+#particle-canvas {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; 
+  z-index: 1; /* Above matrix (-1) and stage (0), below UI */
+}
+
+#audio-canvas {
+  position: fixed; bottom: 0; left: 0; 
+  width: 100%; height: 200px;
+  pointer-events: none;
+  z-index: 2; /* Above particles */
+  opacity: 0.8;
+}
+
+/* --- HOLO KEYBOARD --- */
+#holo-keyboard {
+  position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+  width: 600px; background: rgba(0, 10, 10, 0.8);
+  border: 1px solid var(--holo-color); padding: 10px;
+  z-index: 50; display: flex; flex-direction: column; gap: 5px;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
+  perspective: 800px;
+}
+
+.keyboard-row { display: flex; gap: 5px; justify-content: center; }
+
+.holo-key {
+  background: rgba(0, 255, 204, 0.1); border: 1px solid var(--holo-color);
+  color: var(--holo-color); padding: 10px; text-align: center;
+  cursor: crosshair; transition: all 0.1s; font-family: monospace;
+  user-select: none;
+}
+
+.holo-key.key-hover {
+  background: rgba(0, 255, 204, 0.4);
+  box-shadow: 0 0 10px var(--holo-color);
+  transform: translateZ(10px);
+}
+
+.holo-key.key-pressed {
+  background: #fff; color: #000;
+  transform: scale(0.95);
+}
+
+/* --- SYSTEM DASHBOARD --- */
+#system-dashboard {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+  width: 400px; background: rgba(10, 15, 15, 0.9);
+  border: 1px solid var(--holo-color); padding: 15px;
+  z-index: 60; backdrop-filter: blur(10px);
+  box-shadow: 0 0 30px rgba(0, 255, 204, 0.15);
+}
+
+.hud-header {
+  border-bottom: 1px solid var(--holo-color); margin-bottom: 10px;
+  padding-bottom: 5px; font-weight: bold; display: flex; justify-content: space-between;
+  text-shadow: 0 0 5px var(--holo-color);
+}
+
+#config-modal {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 320px; background: rgba(10, 15, 15, 0.95); border: 1px solid var(--holo-color);
+  padding: 20px; z-index: 1000; display: none; box-shadow: 0 0 30px rgba(0, 255, 204, 0.2);
+}
+#config-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.8); z-index: 999; display: none; backdrop-filter: blur(5px);
+}
+
+@keyframes spin { from { transform: translate(-50%, -50%) rotateZ(0deg); } to { transform: translate(-50%, -50%) rotateZ(360deg); } }
+@keyframes spin-rev { from { transform: translate(-50%, -50%) rotateZ(360deg); } to { transform: translate(-50%, -50%) rotateZ(0deg); } }
+@keyframes spin-gyro { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+@keyframes spin-gyro-rev { from { transform: translate(-50%, -50%) rotate(360deg); } to { transform: translate(-50%, -50%) rotate(0deg); } }
+@keyframes scan { 0% { top: 10%; opacity: 0; } 50% { opacity: 1; } 100% { top: 90%; opacity: 0; } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 51, 51, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); } }
