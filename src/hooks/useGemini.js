@@ -35,18 +35,14 @@ export const useGemini = () => {
     }, []);
 
     const sendRequest = useCallback(async (payload, apiKey) => {
-        if (!apiKey) throw new Error("API Key Required");
         setLoading(true);
         setError(null);
         
         try {
-            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            const response = await fetch("/api/chat", {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json',
-                    'HTTP-Referer': 'https://jarvis-ui.com',
-                    'X-Title': 'Jarvis AI'
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(payload)
             });

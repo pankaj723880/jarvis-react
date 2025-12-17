@@ -20,7 +20,7 @@ function App() {
   const [messages, setMessages] = useState([
     { sender: 'AI', text: 'J.A.R.V.I.S. Core V5.0 Online. Voice & File Systems Active.' }
   ]);
-  const [apiKey, setApiKey] = useState(process.env.REACT_APP_OPENROUTER_API_KEY || '');
+  const [apiKey, setApiKey] = useState(localStorage.getItem('jarvis_api_key') || process.env.REACT_APP_OPENROUTER_API_KEY || '');
   const [currentModel, setCurrentModel] = useState(localStorage.getItem('jarvis_model') || 'google/gemini-2.0-flash-001');
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [inputText, setInputText] = useState('');
